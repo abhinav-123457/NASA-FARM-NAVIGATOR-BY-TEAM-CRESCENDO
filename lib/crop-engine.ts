@@ -17,16 +17,6 @@ export interface CropYield {
   message: string
 }
 
-export interface PestDisease {
-  type: "pest" | "disease"
-  name: string
-  severity: number // 0-100
-  impact: string
-  treatment: string
-  treatmentCost: number
-  healthBoost: number
-}
-
 export class CropEngine {
   getCropStages(cropType: CropType): CropStageInfo[] {
     if (!cropType) return []
@@ -89,7 +79,7 @@ export class CropEngine {
     const currentStage = stages[Math.floor(tile.cropStage)]
 
     // Calculate growth rate based on conditions
-    let growthRate = 0.1 // Base growth per day
+    let growthRate = 1 // Base growth per day
 
     // Temperature factor
     const [minTemp, maxTemp] = crop.tempRange
@@ -120,13 +110,13 @@ export class CropEngine {
     const newStage = Math.min(4, tile.cropStage + growthRate)
 
     let newHealth = tile.health
-    if (tempFactor < 0.5) newHealth -= 1 // Reduced from 5
-    if (waterFactor < 0.5) newHealth -= 2 // Reduced from 8
-    if (nutrientFactor < 0.3) newHealth -= 1 // Reduced from 4
+    // Make health deductions negligible
+    if (waterFactor < 0.5) newHealth -= 0.1 // Reduced from 1
+    if (nutrientFactor < 0.3) newHealth -= 0.1 // Reduced from 1
     newHealth = Math.max(0, Math.min(100, newHealth))
 
     // Consume nutrients
-    const nutrientConsumption = 0.5
+    const nutrientConsumption = 1.0
     const newNutrients = Math.max(0, tile.nutrients - nutrientConsumption)
 
     return {
@@ -213,67 +203,6 @@ export class CropEngine {
     }
   }
 
-  checkPestsAndDiseases(tile: TileData, weather: WeatherCondition, isStoryMode = false): PestDisease | null {
-    if (!tile.crop || tile.health > 70) return null
-
-    const pests: PestDisease[] = [
-      {
-        type: "pest",
-        name: "Stem Borer",
-        severity: 60,
-        impact: "Reduces yield by 20-30%",
-        treatment: "Apply neem oil spray (5ml/L) or use pheromone traps",
-        treatmentCost: 50,
-        healthBoost: 25,
-      },
-      {
-        type: "pest",
-        name: "Aphids",
-        severity: 40,
-        impact: "Stunts growth, transmits viruses",
-        treatment: "Spray soap solution (10g/L) or introduce ladybugs",
-        treatmentCost: 30,
-        healthBoost: 20,
-      },
-      {
-        type: "disease",
-        name: "Blast Disease",
-        severity: 70,
-        impact: "Leaf spots, reduced photosynthesis",
-        treatment: "Apply Tricyclazole fungicide (0.6g/L) and improve drainage",
-        treatmentCost: 80,
-        healthBoost: 30,
-      },
-      {
-        type: "disease",
-        name: "Root Rot",
-        severity: 80,
-        impact: "Wilting, plant death",
-        treatment: "Reduce watering, improve soil drainage, apply Trichoderma",
-        treatmentCost: 100,
-        healthBoost: 35,
-      },
-    ]
-
-    // Higher chance of pests/diseases in poor conditions
-    const riskFactor = (100 - tile.health) / 100
-
-    const difficultyMultiplier = isStoryMode ? 0.15 : 1.0
-
-    // Weather influences with reduced probabilities
-    if (weather === "monsoon" && Math.random() < riskFactor * 0.7 * difficultyMultiplier) {
-      return pests[2] // Blast disease more common in wet conditions
-    } else if (weather === "drought" && Math.random() < riskFactor * 0.5 * difficultyMultiplier) {
-      return pests[1] // Aphids in dry conditions
-    } else if (tile.moisture > 80 && Math.random() < riskFactor * 0.6 * difficultyMultiplier) {
-      return pests[3] // Root rot in waterlogged soil
-    } else if (Math.random() < riskFactor * 0.4 * difficultyMultiplier) {
-      return pests[0] // General pest
-    }
-
-    return null
-  }
-
   getCropRecommendations(soilType: SoilType, weather: { temp: number; precip: number }): CropType[] {
     const recommendations: CropType[] = []
 
@@ -330,20 +259,6 @@ export class CropEngine {
         yieldBonus: 0,
       }
     )
-  }
-
-  applyTreatment(tile: TileData, pestDisease: PestDisease): TileData {
-    if (!tile.crop) return tile
-
-    const newTile = { ...tile }
-
-    // Boost health based on treatment effectiveness
-    newTile.health = Math.min(100, newTile.health + pestDisease.healthBoost)
-
-    // Also slightly improve nutrients as treatment includes care
-    newTile.nutrients = Math.min(100, newTile.nutrients + 5)
-
-    return newTile
   }
 
   applyEmergencyCare(tile: TileData): { tile: TileData; cost: number } {

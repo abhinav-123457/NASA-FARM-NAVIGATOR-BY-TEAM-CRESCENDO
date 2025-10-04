@@ -1,8 +1,9 @@
+
 "use client"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Droplets, Leaf, Trophy, Heart, Siren } from "lucide-react"
+import { Droplets, Leaf, Trophy, Siren } from "lucide-react"
 import type { TileData, LivestockType, WeatherCondition } from "@/types/game"
 import { CropEngine } from "@/lib/crop-engine"
 
@@ -13,7 +14,6 @@ interface IsometricGridProps {
   onWaterTile?: (x: number, y: number) => void
   onFertilizeTile?: (x: number, y: number) => void
   onHarvestTile?: (x: number, y: number) => void
-  onApplyTreatment?: (x: number, y: number) => void
   onEmergencyCare?: (x: number, y: number) => void
   currentCredits?: number
   weather?: WeatherCondition
@@ -26,7 +26,6 @@ export function IsometricGrid({
   onWaterTile,
   onFertilizeTile,
   onHarvestTile,
-  onApplyTreatment,
   onEmergencyCare,
   currentCredits = 0,
   weather = "sunny",
@@ -101,8 +100,6 @@ export function IsometricGrid({
             const isMature = tile.cropStage >= 4
 
             const isCritical = tile.crop && tile.health < 30
-            const pestDisease = tile.crop ? cropEngine.checkPestsAndDiseases(tile, weather) : null
-            const needsTreatment = pestDisease && tile.health < 70
 
             return (
               <div
@@ -190,23 +187,7 @@ export function IsometricGrid({
                               </Button>
                             )}
 
-                            {!isCritical && needsTreatment && onApplyTreatment && pestDisease && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full h-6 text-xs mt-1 bg-orange-500 hover:bg-orange-600 text-white border-orange-600"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  onApplyTreatment(colIdx, rowIdx)
-                                }}
-                                disabled={currentCredits < pestDisease.treatmentCost}
-                              >
-                                <Heart className="w-3 h-3 mr-1" />
-                                Treat
-                              </Button>
-                            )}
-
-                            {!isCritical && !needsTreatment && isMature && onHarvestTile && (
+                            {!isCritical && isMature && onHarvestTile && (
                               <Button
                                 size="sm"
                                 className="w-full h-6 text-xs mt-1 bg-yellow-600 hover:bg-yellow-700"
@@ -220,39 +201,36 @@ export function IsometricGrid({
                               </Button>
                             )}
 
-                            {!isCritical &&
-                              !needsTreatment &&
-                              !isMature &&
-                              (tile.moisture < 30 || tile.health < 50) && (
-                                <div className="flex gap-1 mt-1">
-                                  {tile.moisture < 30 && onWaterTile && (
-                                    <Button
-                                      size="sm"
-                                      variant="secondary"
-                                      className="w-full h-5 text-xs px-1"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        onWaterTile(colIdx, rowIdx)
-                                      }}
-                                    >
-                                      <Droplets className="w-2 h-2" />
-                                    </Button>
-                                  )}
-                                  {tile.health < 50 && onFertilizeTile && (
-                                    <Button
-                                      size="sm"
-                                      variant="secondary"
-                                      className="w-full h-5 text-xs px-1 bg-green-600 hover:bg-green-700"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        onFertilizeTile(colIdx, rowIdx)
-                                      }}
-                                    >
-                                      <Leaf className="w-2 h-2" />
-                                    </Button>
-                                  )}
-                                </div>
-                              )}
+                            {!isCritical && !isMature && (tile.moisture < 30 || tile.health < 50) && (
+                              <div className="flex gap-1 mt-1">
+                                {tile.moisture < 30 && onWaterTile && (
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    className="w-full h-5 text-xs px-1"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      onWaterTile(colIdx, rowIdx)
+                                    }}
+                                  >
+                                    <Droplets className="w-2 h-2" />
+                                  </Button>
+                                )}
+                                {tile.health < 50 && onFertilizeTile && (
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    className="w-full h-5 text-xs px-1 bg-green-600 hover:bg-green-700"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      onFertilizeTile(colIdx, rowIdx)
+                                    }}
+                                  >
+                                    <Leaf className="w-2 h-2" />
+                                  </Button>
+                                )}
+                              </div>
+                            )}
                           </>
                         )}
                       </div>

@@ -8,16 +8,15 @@ import { Button } from "@/components/ui/button"
 import type { TileData } from "@/types/game"
 import { CROP_DATA } from "@/lib/game-utils"
 import { CropEngine } from "@/lib/crop-engine"
-import { Sprout, AlertTriangle, TrendingUp, Heart, Siren } from "lucide-react"
+import { Sprout, Siren, TrendingUp } from "lucide-react"
 
 interface CropInfoPanelProps {
   tile: TileData | null
   weather: { temp: number; precip: number; condition: any }
-  onApplyTreatment?: (x: number, y: number) => void
   onEmergencyCare?: (x: number, y: number) => void
 }
 
-export function CropInfoPanel({ tile, weather, onApplyTreatment, onEmergencyCare }: CropInfoPanelProps) {
+export function CropInfoPanel({ tile, weather, onEmergencyCare }: CropInfoPanelProps) {
   const cropEngine = new CropEngine()
 
   if (!tile || !tile.crop) {
@@ -42,7 +41,6 @@ export function CropInfoPanel({ tile, weather, onApplyTreatment, onEmergencyCare
   const currentStage = stages[currentStageIndex]
   const stageProgress = ((tile.cropStage - currentStageIndex) * 100).toFixed(0)
 
-  const pestDisease = cropEngine.checkPestsAndDiseases(tile, weather.condition)
   const isCritical = tile.health < 30
 
   return (
@@ -100,7 +98,7 @@ export function CropInfoPanel({ tile, weather, onApplyTreatment, onEmergencyCare
                     className="w-full"
                     onClick={() => onEmergencyCare(tile.x, tile.y)}
                   >
-                    <Heart className="w-4 h-4 mr-2" />
+                    <Siren className="w-4 h-4 mr-2" />
                     Emergency Care (150 Credits)
                   </Button>
                 )}
@@ -138,37 +136,6 @@ export function CropInfoPanel({ tile, weather, onApplyTreatment, onEmergencyCare
           <div>Soil: {crop.idealSoil.join(", ")}</div>
           <div>Days to Harvest: {crop.harvestDays}</div>
         </div>
-
-        {pestDisease && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription className="text-xs">
-              <div className="font-semibold mb-1">
-                {pestDisease.type === "pest" ? "🐛 Pest" : "🦠 Disease"} Detected: {pestDisease.name}
-              </div>
-              <div className="mb-1 text-red-800">
-                <strong>Impact:</strong> {pestDisease.impact}
-              </div>
-              <div className="mb-2 text-red-700">
-                <strong>Treatment:</strong> {pestDisease.treatment}
-              </div>
-              <div className="mb-2 text-xs text-red-600">
-                <strong>Effectiveness:</strong> +{pestDisease.healthBoost}% health recovery
-              </div>
-              {onApplyTreatment && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full border-red-300 hover:bg-red-50 bg-transparent"
-                  onClick={() => onApplyTreatment(tile.x, tile.y)}
-                >
-                  <Heart className="w-4 h-4 mr-2" />
-                  Apply Treatment ({pestDisease.treatmentCost} Credits)
-                </Button>
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
 
         {/* Harvest Prediction */}
         {tile.cropStage >= 3.5 && (
